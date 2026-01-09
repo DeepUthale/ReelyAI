@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, abort
 import uuid
 from werkzeug.utils import secure_filename
 from queue_config import q
@@ -7,6 +7,7 @@ from queue_config import redis_conn
 from tasks import generate_reel_job
 import json, os
 from datetime import datetime
+import shutil
 
 UPLOAD_FOLDER = "user_uploads"
 REELS_FOLDER = os.path.join("static", "reels")
@@ -100,6 +101,25 @@ def gallery():
 
     reels.reverse()
     return render_template("gallery.html", reels=reels)
+
+@app.route("/reel/<reel_id>/delete", methods=["POST"])
+def delete_reel(reel_id):
+    # reel_id is the folder name / uuid you used, e.g. "a1b2c3..."
+    # mp4 file path
+    mp4_path = os.path.join(REELS_FOLDER, f"{reel_id}.mp4")
+
+    # user_uploads folder path (contains meta.txt, audio, inputs, clips)
+    upload_dir = os.path.join(app.config["UPLOAD_FOLDER"], reel_id)
+
+    # Delete the mp4 if it exists
+    if os.path.exists(mp4_path):
+        os.remove(mp4_path)
+
+    # Delete the whole upload folder (optional but recommended to free space)
+    if os.path.exists(upload_dir):
+        shutil.rmtree(upload_dir, ignore_errors=True)
+
+    return redirect(url_for("gallery"))
 
 if __name__ == "__main__":
     os.makedirs(UPLOAD_FOLDER, exist_ok=True)
