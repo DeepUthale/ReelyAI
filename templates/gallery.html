@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block title %}Gallery - Reely{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/gallery.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="container gallery-container">
+  <h1 class="gallery-title">Reel Gallery</h1>
+
+  {% if reels and reels|length > 0 %}
+    <div class="gallery-scroll">
+      {% for reel in reels %}
+        <div class="reel-card">
+          <div class="reel-thumbnail">
+            <video
+              src="{{ url_for('static', filename='reels/' ~ reel.file) }}"
+              playsinline
+              loop
+              controls>
+            </video>
+          </div>
+
+          <div class="reel-info">
+            <h3>{{ reel.title }}</h3>
+            <p>Created by: {{ reel.created_by }}</p>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="empty-state">
+      <h2>Wow, such empty 🎬</h2>
+      <p>Create your first reel and it’ll show up here</p>
+      <a href="/create" class="cta-button">Create a Reel</a>
+      <br>
+      <h6>Please make sure to download your reels, as we don't store them for you, yet :) </h6>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}
