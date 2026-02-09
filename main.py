@@ -1,12 +1,11 @@
-from flask import Flask, render_template, request, redirect, url_for, abort
+from flask import Flask, render_template, request, redirect, url_for
 import uuid
 from werkzeug.utils import secure_filename
 from queue_config import q
 from rq.job import Job
 from queue_config import redis_conn
 from tasks import generate_reel_job
-import json, os
-from datetime import datetime
+import os
 import shutil
 
 UPLOAD_FOLDER = "user_uploads"
