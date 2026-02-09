@@ -1,3 +1,5 @@
 .env
 __pycache__/
 *.pyc
+user_uploads/
+static/reels/
