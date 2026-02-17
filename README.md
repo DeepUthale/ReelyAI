@@ -1,4 +1,4 @@
-# ReelyAI
+# ReelyAI : http://reelyai.duckdns.org/
 
 AI-powered short video reel generator. Upload images and videos, add AI-generated voiceover and background music, and get a polished reel ready to share.
 
