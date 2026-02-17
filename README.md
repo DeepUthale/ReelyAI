@@ -1,8 +1,4 @@
-<<<<<<< HEAD
 # ReelyAI : http://reelyai.duckdns.org/
-=======
-# ReelyAI
->>>>>>> 400ed47 (Added Components and Fixed Styling)
 
 AI-powered short video reel generator. Upload images and videos, add AI-generated voiceover and background music, and get a polished reel ready to share.
 
