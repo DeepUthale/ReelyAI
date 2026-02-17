@@ -38,7 +38,7 @@
 /* Card */
 .reel-card {
   flex: 0 0 auto;          
-  width: 280px;            
+  width: 320px;            
   border-radius: 16px;
   overflow: hidden;
   box-shadow: var(--shadow-md);
