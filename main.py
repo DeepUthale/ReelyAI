@@ -1,10 +1,12 @@
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, jsonify
 import uuid
+import requests as http_requests
 from werkzeug.utils import secure_filename
 from queue_config import q
 from rq.job import Job
 from queue_config import redis_conn
 from tasks import generate_reel_job
+from config import ELEVENLABS_API_KEY
 import os
 import shutil
 
@@ -28,6 +30,7 @@ def create():
         voice_id = request.form.get("voice_id", "JBFqnCBsd6RMkjVDRZzb")
         reel_name = request.form.get("reel_name", "").strip()
         created_by = request.form.get("created_by", "").strip()
+        music_prompt = request.form.get("music_prompt", "").strip()
 
         user_dir = os.path.join(app.config['UPLOAD_FOLDER'], rec_id)
         os.makedirs(user_dir, exist_ok=True)
@@ -41,6 +44,10 @@ def create():
 
         with open(os.path.join(user_dir, "meta.txt"), "w", encoding="utf-8") as f:
             f.write(f"{reel_name}\n{created_by}\n")
+
+        if music_prompt:
+            with open(os.path.join(user_dir, "music.txt"), "w", encoding="utf-8") as f:
+                f.write(music_prompt)
 
         # save uploads in order
         input_files = []
@@ -119,6 +126,23 @@ def delete_reel(reel_id):
         shutil.rmtree(upload_dir, ignore_errors=True)
 
     return redirect(url_for("gallery"))
+
+@app.route("/api/voice-preview/<voice_id>")
+def voice_preview(voice_id):
+    try:
+        resp = http_requests.get(
+            f"https://api.elevenlabs.io/v1/voices/{voice_id}",
+            headers={"xi-api-key": ELEVENLABS_API_KEY},
+            timeout=10,
+        )
+        if resp.ok:
+            data = resp.json()
+            preview_url = data.get("preview_url", "")
+            if preview_url:
+                return jsonify({"preview_url": preview_url})
+    except Exception:
+        pass
+    return jsonify({"error": "Preview not available"}), 404
 
 if __name__ == "__main__":
     os.makedirs(UPLOAD_FOLDER, exist_ok=True)

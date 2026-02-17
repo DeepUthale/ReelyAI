@@ -2,7 +2,7 @@
 import os
 import time
 import subprocess
-from text_to_audio import text_to_speech_file
+from text_to_audio import text_to_speech_file, generate_music
 
 def text_to_audio(folder):
     print("TTA - ", folder)
@@ -18,6 +18,10 @@ def text_to_audio(folder):
 
     print(text, folder, "| voice:", voice_id)
     text_to_speech_file(text, folder, voice_id)
+    try:
+        generate_music(folder)
+    except Exception as e:
+        print(f"Music generation failed (will continue without music): {e}")
 
 
 def get_audio_duration(audio_path: str) -> float:
@@ -76,7 +80,10 @@ def get_media_duration(path: str) -> float:
     r = subprocess.run(cmd, capture_output=True, text=True)
     if r.returncode != 0:
         raise RuntimeError(f"ffprobe failed for {path}: {r.stderr}")
-    return float(r.stdout.strip() or 0.0)
+    raw = r.stdout.strip()
+    if not raw or raw == "N/A":
+        return 0.0
+    return float(raw)
 
 def create_reel(folder: str):
     os.makedirs("static/reels", exist_ok=True)
@@ -113,7 +120,7 @@ def create_reel(folder: str):
         e = ext(name)
         if e == ".gif":
             gifs.append(name)
-        elif e in [".png", ".jpg", ".jpeg", ".webp"]:
+        elif e in [".png", ".jpg", ".jpeg", ".webp", ".jfif", ".bmp", ".tiff", ".tif", ".avif"]:
             stills.append(name)
         else:
             # treat everything else as "video" (mp4/mov/webm etc)
@@ -145,7 +152,7 @@ def create_reel(folder: str):
                 timeline.append({"name": name, "kind": "gif", "dur": dur})
                 t_used += dur
 
-        elif e in [".png", ".jpg", ".jpeg", ".webp"]:
+        elif e in [".png", ".jpg", ".jpeg", ".webp", ".jfif", ".bmp", ".tiff", ".tif", ".avif"]:
             timeline.append({"name": name, "kind": "still", "dur": None})
 
         else:
@@ -180,6 +187,12 @@ def create_reel(folder: str):
 
     # Remove any zero-duration items
     timeline = [x for x in timeline if x["dur"] and x["dur"] > 0]
+
+    # Debug: print timeline
+    print(f"[DEBUG] Audio duration (A): {A}s, t_used by gifs/videos: {t_used}s, remaining for stills: {remaining}s")
+    print(f"[DEBUG] still_count: {still_count}, per_still: {per_still}s")
+    for item in timeline:
+        print(f"[DEBUG]   {item['kind']:6s} {item['name']:30s} dur={item['dur']:.2f}s")
 
     # ---- create per-item mp4 clips ----
     clips_dir = os.path.join(user_dir, "_clips")
@@ -260,21 +273,43 @@ def create_reel(folder: str):
     
     # ---- mux audio, make final output exactly audio length ----
     out_final = os.path.join("static", "reels", f"{folder}.mp4")
+    music_path = os.path.join(user_dir, "music.mp3")
 
-    subprocess.run([
-        "ffmpeg", "-y",
-        "-i", merged_video,
-        "-i", audio_path,
-        "-filter_complex",
-        f"[0:v]tpad=stop_mode=clone:stop_duration=10,trim=duration={A},setpts=PTS-STARTPTS[v];"
-        f"[1:a]atrim=duration={A},asetpts=PTS-STARTPTS[a]",
-        "-map", "[v]",
-        "-map", "[a]",
-        "-c:v", "libx264", "-pix_fmt", "yuv420p",
-        "-c:a", "aac",
-        "-movflags", "+faststart",
-        out_final
-    ], check=True)
+    if os.path.exists(music_path):
+        # Mix TTS voice + background music
+        subprocess.run([
+            "ffmpeg", "-y",
+            "-i", merged_video,
+            "-i", audio_path,
+            "-i", music_path,
+            "-filter_complex",
+            f"[0:v]tpad=stop_mode=clone:stop_duration=10,trim=duration={A},setpts=PTS-STARTPTS[v];"
+            f"[1:a]atrim=duration={A},asetpts=PTS-STARTPTS[voice];"
+            f"[2:a]aloop=loop=-1:size=2e+09,atrim=duration={A},asetpts=PTS-STARTPTS,afade=t=in:d=1,afade=t=out:st={max(0,A-2)}:d=2,volume=0.25[music];"
+            f"[voice][music]amix=inputs=2:duration=first:dropout_transition=2:normalize=0[a]",
+            "-map", "[v]",
+            "-map", "[a]",
+            "-c:v", "libx264", "-pix_fmt", "yuv420p",
+            "-c:a", "aac",
+            "-movflags", "+faststart",
+            out_final
+        ], check=True)
+    else:
+        # Voice only (no background music)
+        subprocess.run([
+            "ffmpeg", "-y",
+            "-i", merged_video,
+            "-i", audio_path,
+            "-filter_complex",
+            f"[0:v]tpad=stop_mode=clone:stop_duration=10,trim=duration={A},setpts=PTS-STARTPTS[v];"
+            f"[1:a]atrim=duration={A},asetpts=PTS-STARTPTS[a]",
+            "-map", "[v]",
+            "-map", "[a]",
+            "-c:v", "libx264", "-pix_fmt", "yuv420p",
+            "-c:a", "aac",
+            "-movflags", "+faststart",
+            out_final
+        ], check=True)
 
 
     print("CR -", folder, "=>", out_final)

@@ -83,8 +83,36 @@
                             <option value="UgBBYS2sOqTuMpoF3BR0">Mark - Natural Conversations</option>
                             </select>
                         </div>
+                        <button type="button" class="voice-preview-btn" id="voicePreviewBtn" title="Preview voice">
+                            <span class="preview-icon" id="previewIcon">
+                                <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+                                    <polygon points="4,2 14,8 4,14" />
+                                </svg>
+                            </span>
+                            <span class="preview-label" id="previewLabel">Try Voice</span>
+                        </button>
                     </div>
-                
+
+                    <!-- Background Music -->
+                    <div class="music-section">
+                        <label class="music-label" for="musicPrompt">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M9 18V5l12-2v13"/>
+                                <circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>
+                            </svg>
+                            Background Music
+                            <span class="music-optional">Optional</span>
+                        </label>
+                        <textarea
+                            class="text-input music-input"
+                            id="musicPrompt"
+                            name="music_prompt"
+                            placeholder="Describe the background music you want, e.g. 'chill lo-fi hip hop beats' or 'epic cinematic orchestral'..."
+                            rows="2"
+                        ></textarea>
+                        <p class="music-hint">Leave empty for no background music. Music will play softly behind the voice.</p>
+                    </div>
+
                     <button type="submit" class="submit-btn" id="submitBtn">
                         Create Reel
                     </button>
@@ -217,6 +245,64 @@
       if (res.redirected) window.location.href = res.url;
       else return res.text().then(t => console.log(t));
     }).catch(console.error);
+  });
+
+  // Voice preview
+  const previewBtn = document.getElementById("voicePreviewBtn");
+  const previewIcon = document.getElementById("previewIcon");
+  const previewLabel = document.getElementById("previewLabel");
+  const voiceSelect = document.getElementById("voiceSelect");
+  let previewAudio = null;
+  let previewCache = {};
+
+  const playSvg = '<svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><polygon points="4,2 14,8 4,14" /></svg>';
+  const stopSvg = '<svg width="12" height="12" viewBox="0 0 14 14" fill="currentColor"><rect x="1" y="1" width="12" height="12" rx="2" /></svg>';
+  const loadSvg = '<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="8" cy="8" r="6" stroke-dasharray="28" stroke-dashoffset="8" /></svg>';
+
+  previewBtn.addEventListener("click", async () => {
+    // If already playing, stop it
+    if (previewAudio && !previewAudio.paused) {
+      previewAudio.pause();
+      previewAudio.currentTime = 0;
+      previewIcon.innerHTML = playSvg;
+      previewLabel.textContent = "Try Voice";
+      previewBtn.classList.remove("playing");
+      return;
+    }
+
+    const voiceId = voiceSelect.value;
+    previewIcon.innerHTML = loadSvg;
+    previewLabel.textContent = "Loading…";
+    previewBtn.classList.add("loading");
+
+    try {
+      let url = previewCache[voiceId];
+      if (!url) {
+        const resp = await fetch(`/api/voice-preview/${voiceId}`);
+        if (!resp.ok) throw new Error("Preview not available");
+        const data = await resp.json();
+        url = data.preview_url;
+        previewCache[voiceId] = url;
+      }
+
+      previewAudio = new Audio(url);
+      previewAudio.play();
+      previewBtn.classList.remove("loading");
+      previewBtn.classList.add("playing");
+      previewIcon.innerHTML = stopSvg;
+      previewLabel.textContent = "Stop";
+
+      previewAudio.addEventListener("ended", () => {
+        previewIcon.innerHTML = playSvg;
+        previewLabel.textContent = "Try Voice";
+        previewBtn.classList.remove("playing");
+      });
+    } catch (err) {
+      previewBtn.classList.remove("loading");
+      previewIcon.innerHTML = playSvg;
+      previewLabel.textContent = "Try Voice";
+      console.error("Voice preview failed:", err);
+    }
   });
 </script>
 

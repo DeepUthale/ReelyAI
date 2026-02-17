@@ -40,3 +40,36 @@ def text_to_speech_file(text: str, folder: str, voice_id: str) -> str:
 
     # Return the path of the saved audio file
     return save_file_path
+
+
+def generate_music(folder: str) -> str | None:
+    """Generate background music from a text prompt using ElevenLabs Music API.
+    Returns the saved file path, or None if no music prompt exists."""
+    music_prompt_path = os.path.join(f"user_uploads/{folder}", "music.txt")
+
+    if not os.path.exists(music_prompt_path):
+        return None
+
+    with open(music_prompt_path, "r", encoding="utf-8") as f:
+        prompt = f.read().strip()
+
+    if not prompt:
+        return None
+
+    print(f"Generating background music for {folder}: '{prompt}'")
+
+    response = client.music.compose(
+        prompt=prompt,
+        music_length_ms=8000,
+        output_format="mp3_44100_128",
+    )
+
+    save_file_path = os.path.join(f"user_uploads/{folder}", "music.mp3")
+
+    with open(save_file_path, "wb") as f:
+        for chunk in response:
+            if chunk:
+                f.write(chunk)
+
+    print(f"{save_file_path}: Background music saved successfully!")
+    return save_file_path
