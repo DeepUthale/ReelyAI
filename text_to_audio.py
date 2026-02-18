@@ -1,4 +1,5 @@
 import os
+import subprocess
 from elevenlabs import VoiceSettings
 from elevenlabs.client import ElevenLabs
 from config import ELEVENLABS_API_KEY
@@ -64,12 +65,21 @@ def generate_music(folder: str) -> str | None:
         output_format="mp3_44100_128",
     )
 
+    raw_path = os.path.join(f"user_uploads/{folder}", "music_raw.mp3")
     save_file_path = os.path.join(f"user_uploads/{folder}", "music.mp3")
 
-    with open(save_file_path, "wb") as f:
+    with open(raw_path, "wb") as f:
         for chunk in response:
             if chunk:
                 f.write(chunk)
+
+    # Trim to 5 seconds to cut off the silent tail before looping
+    subprocess.run([
+        "ffmpeg", "-y", "-i", raw_path,
+        "-t", "5", "-c", "copy", save_file_path
+    ], check=True, capture_output=True)
+
+    os.remove(raw_path)
 
     print(f"{save_file_path}: Background music saved successfully!")
     return save_file_path

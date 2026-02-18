@@ -285,7 +285,7 @@ def create_reel(folder: str):
             "-filter_complex",
             f"[0:v]tpad=stop_mode=clone:stop_duration=10,trim=duration={A},setpts=PTS-STARTPTS[v];"
             f"[1:a]atrim=duration={A},asetpts=PTS-STARTPTS[voice];"
-            f"[2:a]aloop=loop=-1:size=2e+09,atrim=duration={A},asetpts=PTS-STARTPTS,afade=t=in:d=1,afade=t=out:st={max(0,A-2)}:d=2,volume=0.25[music];"
+            f"[2:a]aloop=loop=-1:size=2e+09,atrim=duration={A},asetpts=PTS-STARTPTS,volume=0.25,afade=t=out:st={max(0,A-0.5)}:d=0.5[music];"
             f"[voice][music]amix=inputs=2:duration=first:dropout_transition=2:normalize=0[a]",
             "-map", "[v]",
             "-map", "[a]",
