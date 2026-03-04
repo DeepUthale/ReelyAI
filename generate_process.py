@@ -260,14 +260,13 @@ def create_reel(folder: str):
             f.write(f"file '{abs_p}'\n")
     
     # ---- concat clips into one mp4 ----
+    # Use -c copy to avoid re-encoding (clips are already h264/yuv420p) — saves memory
     merged_video = os.path.join(clips_dir, "merged.mp4")
     subprocess.run([
         "ffmpeg", "-y",
         "-f", "concat", "-safe", "0",
         "-i", clips_list_path,
-        "-c:v", "libx264",
-        "-pix_fmt", "yuv420p",
-        "-r", "30",
+        "-c", "copy",
         merged_video
     ], check=True)
     
