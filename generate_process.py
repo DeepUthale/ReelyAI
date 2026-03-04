@@ -220,7 +220,7 @@ def create_reel(folder: str):
                 "-t", str(dur),
                 "-vf", vf,
                 "-an",
-                "-c:v", "libx264", "-pix_fmt", "yuv420p",
+                "-c:v", "libx264", "-preset", "ultrafast", "-threads", "2", "-pix_fmt", "yuv420p",
                 out
             ]
 
@@ -232,7 +232,7 @@ def create_reel(folder: str):
                 "-t", str(dur),
                 "-vf", vf,
                 "-an",
-                "-c:v", "libx264", "-pix_fmt", "yuv420p",
+                "-c:v", "libx264", "-preset", "ultrafast", "-threads", "2", "-pix_fmt", "yuv420p",
                 out
             ]
 
@@ -243,7 +243,7 @@ def create_reel(folder: str):
                 "-t", str(dur),
                 "-vf", vf,
                 "-an",
-                "-c:v", "libx264", "-pix_fmt", "yuv420p",
+                "-c:v", "libx264", "-preset", "ultrafast", "-threads", "2", "-pix_fmt", "yuv420p",
                 out
             ]
 
@@ -288,7 +288,7 @@ def create_reel(folder: str):
             f"[voice][music]amix=inputs=2:duration=first:dropout_transition=2:normalize=0[a]",
             "-map", "[v]",
             "-map", "[a]",
-            "-c:v", "libx264", "-pix_fmt", "yuv420p",
+            "-c:v", "libx264", "-preset", "ultrafast", "-threads", "2", "-pix_fmt", "yuv420p",
             "-c:a", "aac",
             "-movflags", "+faststart",
             out_final
@@ -304,7 +304,7 @@ def create_reel(folder: str):
             f"[1:a]atrim=duration={A},asetpts=PTS-STARTPTS[a]",
             "-map", "[v]",
             "-map", "[a]",
-            "-c:v", "libx264", "-pix_fmt", "yuv420p",
+            "-c:v", "libx264", "-preset", "ultrafast", "-threads", "2", "-pix_fmt", "yuv420p",
             "-c:a", "aac",
             "-movflags", "+faststart",
             out_final
