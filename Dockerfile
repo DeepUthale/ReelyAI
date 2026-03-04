@@ -1,8 +1,9 @@
 FROM python:3.13-slim
 
-# system deps: ffmpeg/ffprobe + build basics
+# system deps: ffmpeg + supervisor
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ffmpeg \
+    supervisor \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
@@ -19,9 +20,11 @@ RUN mkdir -p user_uploads static/reels
 
 ENV PYTHONUNBUFFERED=1
 ENV FLASK_ENV=production
+# Railway injects PORT; default to 8000 for local use
+ENV PORT=8000
 
-# web port
 EXPOSE 8000
 
-# Gunicorn for Flask
-CMD ["gunicorn", "-b", "0.0.0.0:8000", "main:app", "--workers", "2", "--timeout", "300"]
+COPY supervisord.conf /etc/supervisor/conf.d/app.conf
+
+CMD ["supervisord", "-n", "-c", "/etc/supervisor/supervisord.conf"]
